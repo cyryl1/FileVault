@@ -10,19 +10,22 @@ class ReadCommand(Command):
         if len(args) != 1:
             print("Error: read command requires exactly one argument (file_id)")
             return
-        
-        file_id = args[0]
 
         try:
-            file_info = self.file_service.get_file_info(file_id)
-            upload_time = datetime.fromisoformat(file_info['upload_time'])
-            formatted_time = upload_time.strftime("%Y-%m-%d %H:%M:%S")
+            user = self.require_auth()
+            file_id = args[0]
+
+            file_info = self.file_service.get_file_info(file_id, user["id"])
+            created_at = datetime.fromisoformat(file_info['created_at'])
+            formatted_time = created_at.strftime("%Y-%m-%d %H:%M:%S")
 
             print(f"Filename: {file_info['filename']}")
             print(f"Size: {format_file_size(file_info['size'])}")
             print(f"Path: {file_info['path']}")
             print(f"Uploaded at: {formatted_time}")
 
+        except SystemExit:
+            pass
         except FileNotFoundError as e:
             print(f"Error: {e}")
         except Exception as e:

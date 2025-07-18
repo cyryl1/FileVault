@@ -8,11 +8,12 @@ class DeleteCommand(Command):
         if len(args) != 1:
             print("Error: delete command requires exactly one argument (file_id)")
             return
-        
-        file_id = args[0]
 
         try:
-            self.file_service.delete_file(file_id)
+            user = self.require_auth()
+            file_id = args[0]
+
+            self.file_service.delete_file(file_id, user["id"])
             print("file deleted successfully!")
 
         except FileNotFoundError as e:

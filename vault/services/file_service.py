@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 from typing import Dict, List, Any
 from vault.utils.helpers import validate_file_type
+from vault.services.databse import DatabaseService
 
 
 class FileService:
@@ -15,30 +16,31 @@ class FileService:
             script_dir = Path(__file__).parent
             storage_dir = script_dir / "storage"
         
+        self.db = DatabaseService()
         self.storage_dir = Path(storage_dir)
         self.uploads_dir = self.storage_dir / "uploads"
-        self.metadata_file = self.storage_dir / "metadata.json"
+        # self.metadata_file = self.storage_dir / "metadata.json"
 
         self.storage_dir.mkdir(exist_ok=True)
         self.uploads_dir.mkdir(exist_ok=True)
 
-        if not self.metadata_file.exists():
-            self._save_metadata({})
+        # if not self.metadata_file.exists():
+        #     self._save_metadata({})
 
-    def _load_metadata(self) -> Dict[str, Any]:
-        """Load metadata from JSON file"""
-        try:
-            with open(self.metadata_file, 'r') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            return {}
+    # def _load_metadata(self) -> Dict[str, Any]:
+    #     """Load metadata from JSON file"""
+    #     try:
+    #         with open(self.metadata_file, 'r') as f:
+    #             return json.load(f)
+    #     except (json.JSONDecodeError, FileNotFoundError):
+    #         return {}
         
-    def _save_metadata(self, metadata: Dict[str, Any]) -> None:
-        """Save metadata to JSON file"""
-        with open(self.metadata_file, 'w') as f:
-            json.dump(metadata, f, indent=2)
+    # def _save_metadata(self, metadata: Dict[str, Any]) -> None:
+    #     """Save metadata to JSON file"""
+    #     with open(self.metadata_file, 'w') as f:
+    #         json.dump(metadata, f, indent=2)
 
-    def upload_file(self, filepath: str) -> Dict[str, Any]:
+    def upload_file(self, user_id: str, filepath: str) -> Dict[str, Any]:
         """Upload a file and return metadata"""
         source_path = Path(filepath)
 
@@ -48,24 +50,36 @@ class FileService:
         if not validate_file_type(filepath):
             raise ValueError("File type not allowed: {source_path}")
         
-        file_id = str(uuid.uuid4())[:8]
 
         file_size = source_path.stat().st_size
         upload_time = datetime.now().isoformat()
 
+        file_data = {
+            "name": source_path.name,
+            "size": file_size,
+            "path": ""
+        }
+        
+        file_id = self.db.create_file(user_id, file_data)
+
         dest_path = self.uploads_dir / f"{file_id}_{source_path.name}"
         shutil.copy2(source_path, dest_path)
 
-        metadata = self._load_metadata()
-        metadata[file_id] = {
-            "filename": source_path.name,
-            "size": file_size,
-            "upload_time": upload_time,
-            "path": str(dest_path),
-            "original_path": str(source_path)
-        }
+        self.db.files.update_one(
+            {"id": file_id},
+            {"$set": {"path": str(dest_path)}}
+        )
 
-        self._save_metadata(metadata)
+        # metadata = self._load_metadata()
+        # metadata[file_id] = {
+        #     "filename": source_path.name,
+        #     "size": file_size,
+        #     "upload_time": upload_time,
+        #     "path": str(dest_path),
+        #     "original_path": str(source_path)
+        # }
+
+        # self._save_metadata(metadata)
 
         return {
             "file_id": file_id,
@@ -74,46 +88,59 @@ class FileService:
             "upload_time": upload_time
         }
     
-    def list_files(self) -> List[Dict[str, Any]]:
+    def list_files(self, user_id: str) -> List[Dict[str, Any]]:
         """List all uploaded files"""
-        metadata = self._load_metadata()
-        files = []
+        # metadata = self._load_metadata()
+        files = self.db.get_user_files(user_id)
 
-        for file_id, data in metadata.items():
-            files.append({
-                "file_id": file_id,
-                "filename": data["filename"],
-                "size": data["size"],
-                "upload_time": data["upload_time"]
-            })
+        # for file_id, data in metadata.items():
+        #     files.append({
+        #         "file_id": file_id,
+        #         "filename": data["filename"],
+        #         "size": data["size"],
+        #         "upload_time": data["upload_time"]
+        #     })
         
-        files.sort(key=lambda x: x["upload_time"], reverse=True)
-        return files
-    
-    def get_file_info(self, file_id: str) -> Dict[str, Any]:
-        """Get detailed file information"""
-        metadata = self._load_metadata()
+        # files.sort(key=lambda x: x["upload_time"], reverse=True)
+        # return files
 
-        if file_id not in metadata:
+        return [
+            {
+                "file_id": f["id"],
+                "filename": f["name"],
+                "size": f["size"],
+                "created_at": f["created_at"]
+            }
+            for f in files
+        ]
+    
+    def get_file_info(self, file_id: str, user_id: str) -> Dict[str, Any]:
+        """Get detailed file information"""
+        # metadata = self._load_metadata()
+        file_info = self.db.get_file_by_id(file_id, user_id)
+        if not file_info:
             raise FileNotFoundError(f"File not found: {file_id}")
+
+        # if file_id not in metadata:
+        #     raise FileNotFoundError(f"File not found: {file_id}")
 
         return {
-            "file_id": file_id,
-            **metadata[file_id]
+            "file_id": file_info["id"],
+            "filename": file_info["name"],
+            "size": file_info["size"],
+            "path": file_info["path"],
+            "created_at": file_info["created_at"]
         }
     
-    def delete_file(self, file_id: str) -> bool:
+    def delete_file(self, file_id: str, user_id: str) -> bool:
         """Delete a file and its metadata"""
-        metadata = self._load_metadata()
+        file_info = self.db.get_file_by_id(file_id, user_id)
 
-        if file_id not in metadata:
+        if not file_info:
             raise FileNotFoundError(f"File not found: {file_id}")
         
-        file_path = Path(metadata[file_id]["path"])
+        file_path = Path(file_info["path"])
         if file_path.exists():
             file_path.unlink()
 
-        del metadata[file_id]
-        self._save_metadata(metadata)
-
-        return True
+        return self.db.delete_file(file_id, user_id)
