@@ -9,6 +9,7 @@ from vault.cli.commands.register import RegisterCommand
 from vault.cli.commands.login import LoginCommand
 from vault.cli.commands.logout import LogoutCommand
 from vault.cli.commands.whoami import WhoAmICommand
+from vault.cli.commands.mkdir import MkdirCommand
 
 from typing import List
 
@@ -19,6 +20,7 @@ class CommandRouter:
         self.file_service = FileService()
         self.auth_service = AuthService()
         self.commands = {
+            'mkdir': MkdirCommand(self.auth_service, self.file_service),
             'register': RegisterCommand(self.auth_service, self.file_service),
             'login': LoginCommand(self.auth_service, self.file_service),
             'logout': LogoutCommand(self.auth_service, self.file_service),

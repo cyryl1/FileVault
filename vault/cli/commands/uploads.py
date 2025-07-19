@@ -8,12 +8,13 @@ class UploadCommand(Command):
         if len(args) != 1:
             print("Error: upload command requires exactly one argument (filepath)")
             return
+        
 
         try:
             user = self.require_auth()
             filepath = args[0]
 
-            result = self.file_service.upload_file(user["id"], filepath)
+            result = self.file_service.upload_file(user["id", filepath])
             print(f"File uploaded successfully! ID: {result['file_id']}")
 
         except SystemExit:

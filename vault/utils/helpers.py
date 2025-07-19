@@ -41,3 +41,7 @@ def verify_password(password: str, hashed: str) -> bool:
 def generate_session_token() -> str:
     """Generate a secure session token"""
     return str(uuid.uuid4())
+
+def generate_file_id() -> str:
+    """Generate a unique file ID"""
+    return str(uuid.uuid4())[:8]

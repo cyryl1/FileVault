@@ -1,33 +1,22 @@
-import redis
-import json
+from vault.repositories.base_repository import BaseRepository
+from typing import Dict, Optional, Any, List
 from pathlib import Path
-from typing import Optional
-from datetime import datetime, timedelta
-from vault.config import Config
+from config import Config
 from vault.utils.helpers import generate_session_token
+import json
+from datetime import datetime, timedelta
 
-class SessionService:
-    """Session service using Redis"""
-
-    def __init__(self):
-        try:
-            self.redis_client = redis.Redis(
-                host=Config.REDIS_HOST,
-                port=Config.REDIS_PORT,
-                db=Config.REDIS_DB,
-                decode_responses=True
-            )
-
-            self.redis_client.ping()
-        except redis.ConnectionError:
-            print("Warning: Redis not available. Using file-based sessions.")
-            self.redis_client = None
-            self.session_file = Path(Config.STORAGE_DIR) / ".vault_session"
-
+class SessionRepository(BaseRepository):
+    """Repository for session operations using Redis"""
+    
+    def __init__(self, redis_client=None):
+        self.redis_client = redis_client
+        self.session_file = Path(Config.STORAGE_DIR) / ".vault_session"
+    
     def create_session(self, user_id: str) -> str:
         """Create a new session"""
         token = generate_session_token()
-
+        
         if self.redis_client:
             self.redis_client.setex(
                 f"session:{token}",
@@ -43,7 +32,7 @@ class SessionService:
             self.session_file.parent.mkdir(exist_ok=True)
             with open(self.session_file, 'w') as f:
                 json.dump(session_data, f)
-
+        
         return token
     
     def get_user_id(self, token: str) -> Optional[str]:
@@ -56,17 +45,16 @@ class SessionService:
                 try:
                     with open(self.session_file, 'r') as f:
                         session_data = json.load(f)
-
+                    
                     if session_data.get("token") == token:
                         expires_at = datetime.fromisoformat(session_data["expires_at"])
                         if datetime.now() < expires_at:
                             return session_data["user_id"]
                         else:
                             self.session_file.unlink()
-
-                except (json.JSONDecoder, KeyError):
+                except (json.JSONDecodeError, KeyError):
                     pass
-        return None
+            return None
     
     def delete_session(self, token: str) -> bool:
         """Delete a session"""
