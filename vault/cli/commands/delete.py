@@ -16,6 +16,8 @@ class DeleteCommand(Command):
             self.file_service.delete_file(file_id, user["id"])
             print("file deleted successfully!")
 
+        except SystemExit:
+            pass
         except FileNotFoundError as e:
             print(f"Error as e")
         except Exception as e:

@@ -1,17 +1,23 @@
 Metadata-Version: 2.4
 Name: filevault-cli
-Version: 1.0.0
+Version: 3.0.0
 Summary: A command-line file management system
-Author: Your Name
-Author-email: your.email@example.com
+Author: Aribisala Praise
+Author-email: aribisalapraise@gmail.com
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 License-File: LICENSE
+Requires-Dist: pymongo>=4.0
+Requires-Dist: bcrypt>=4.0
+Requires-Dist: redis>=4.0
+Requires-Dist: celery>=5.0
+Requires-Dist: Pillow>=9.0
 Dynamic: author
 Dynamic: author-email
 Dynamic: classifier
 Dynamic: license-file
+Dynamic: requires-dist
 Dynamic: requires-python
 Dynamic: summary

@@ -1,6 +1,4 @@
 from typing import Dict, Any, Optional
-from vault.services.databse import DatabaseService
-from vault.services.session import SessionService
 from vault.utils.helpers import validate_email, hash_password, verify_password
 from vault.repositories.user_repository import UserRepository
 from vault.repositories.session_repository import SessionRepository
@@ -12,8 +10,6 @@ class AuthService:
     """Authentication service"""
     
     def __init__(self, user_repo: UserRepository, session_repo: SessionRepository):
-        # self.db = DatabaseService()
-        # self.session = SessionService()
         self.user_repo = user_repo
         self.session_repo = session_repo
 
@@ -24,7 +20,7 @@ class AuthService:
         if len(password) < 6:
             raise ValueError("Password must be at least 6 characters")
         
-        user_id = str(uuid.uuid4())
+        user_id = str(uuid.uuid4())[:8]
         user_data = {
             "id": user_id,
             "email": email,
@@ -38,8 +34,8 @@ class AuthService:
     def login(self, email: str, password: str) -> str:
         """Login user and return session token"""
         user = self.user_repo.find_by_email(email)
-        if not user or not verify_password(password, user["hashed_password"]):
-            raise ValueError("Invalid email or password")
+        if not user or not verify_password(password, user["password"]):
+            raise ValueError("Incorrect email or password")
         
         return self.session_repo.create_session(user["id"])
     

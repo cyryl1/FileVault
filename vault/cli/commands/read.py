@@ -2,6 +2,7 @@ from vault.cli.commands.base import Command
 from typing import List
 from datetime import datetime
 from vault.utils.helpers import format_file_size
+from vault.config import FileType
 
 class ReadCommand(Command):
     "Read file metadata"
@@ -20,7 +21,10 @@ class ReadCommand(Command):
             formatted_time = created_at.strftime("%Y-%m-%d %H:%M:%S")
 
             print(f"Filename: {file_info['filename']}")
-            print(f"Size: {format_file_size(file_info['size'])}")
+            print(f"Type: {file_info['type']}")
+            print(f"Size: {format_file_size(file_info['size']) if file_info['type'] != FileType.FOLDER.value else 'N/A'}")
+            print(f"Visibility: {file_info['visibility']}")
+            print(f"Parent ID: {file_info['parent_id'] or 'None'}")
             print(f"Path: {file_info['path']}")
             print(f"Uploaded at: {formatted_time}")
 

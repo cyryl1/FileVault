@@ -1,4 +1,7 @@
 from enum import Enum
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Config:
     """Configuration settings"""
@@ -8,9 +11,9 @@ class Config:
     REDIS_PORT = 6379
     REDIS_DB = 0
     SESSION_TIMEOUT = 3600
-    STORAGE_DIR = "storage"
-    UPLOADS_DIR = "storage/uploads"
-    THUMBNAILS_DIR = "storage/thumbnails"
+    STORAGE_DIR = str(BASE_DIR / "storage")
+    UPLOADS_DIR = str(BASE_DIR / "storage/uploads")
+    THUMBNAILS_DIR = str(BASE_DIR / "storage/thumbnails")
     CELERY_BROKER_URL = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 

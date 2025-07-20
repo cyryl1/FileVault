@@ -1,6 +1,7 @@
 from pathlib import Path
 import bcrypt
 import uuid
+from vault.config import FileType
 
 def format_file_size(size_bytes: int) -> str:
     """Convert bytes to human-readable format"""
@@ -25,6 +26,14 @@ def validate_file_type(filepath: str) -> bool:
     dangerous_extensions = ['.exe', '.bat', '.cmd', '.scr', '.com', '.pif']
     file_ext = Path(filepath).suffix.lower()
     return file_ext not in dangerous_extensions
+
+def get_file_type(filepath: str) -> FileType:
+    """Determin file type based on extension"""
+    file_ext = Path(filepath).suffix.lower()
+    image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+    if file_ext in image_extensions:
+        return FileType.IMAGE
+    return FileType.FILE
 
 def validate_email(email: str) -> bool:
     """Basic email varification"""

@@ -12,22 +12,16 @@ class MkdirCommand(Command):
         try:
             user = self.require_auth()
             folder_name = args[0]
-            parent_id = args[1] if len(args) == 2 else None
-            if parent_id:
-                parent = self.db.get_file_by_id(parent_id, user["id"])
-                if not parent or parent["type"] != "folder":
-                    raise ValueError("Invalid or non-folder parent_id")
-            folder_data = {
-                "name": folder_name,
-                "type": "folder",
-                "parent_id": parent_id
-            }
-
-            folder_id = self.db.create_file(user["id"], folder_data)
-            print(f"Folder created: {folder_name} (ID: {folder_id})")
+            parent_id = args[1] if len(args) > 1 else None
+            
+            result = self.file_service.create_folder(user["id"], folder_name, parent_id)
+            print(f"Folder created: {result['name']}")
+            
         except SystemExit:
             pass
         except ValueError as e:
+            print(f"Error: {e}")
+        except Exception as e:
             print(f"Error creating folder: {e}")
 
     def get_help(self) -> str:

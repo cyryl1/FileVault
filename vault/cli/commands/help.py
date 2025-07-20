@@ -20,18 +20,32 @@ class HelpCommand(Command):
                 print(f" {self.commands[name].get_help()}")
 
         print("\nFile Commands (require authentication):")
-        for name in ['upload', 'list', 'read', 'delete']:
-            if name != 'help':
+        for name in ['mkdir', 'upload', 'ls', 'read', 'delete', 'publish', 'unpublish', 'mv']:
+            if name in self.commands:
                 print(f" {self.commands[name].get_help()}")
+        
+        print("\nSystem Commands:")
+        for name in ['celery']:
+            if name in self.commands:
+                print(f"  {self.commands[name].get_help()}")
+
+        
         print("\nExample usage:")
         print(" vault register")
         print(" vault login")
+        print(" mkdir Documents")
+        print(" vault upload ./document.pdf Documents")
+        print(" vault ls")
+        print(" vault ls Documents")
+        print(" vault ls --public")
+        print(" vault read <file_id>")
+        print(" vault delete <file_id>")
+        print(" vault publish <file_id>")
+        print(" vault unpublish <file_id>")
+        print(" vault mv <file_id> <parent_id>")
         print(" vault whoami")
         print(" vault logout")
-        print(" vault upload ./document.pdf")
-        print(" vault list")
-        print(" vault read 8f7a1c21")
-        print(" vault delete 8f7a1c21")
+        print(" vault celery")
 
     def get_help(self) -> str:
         return "help - Show this help message"

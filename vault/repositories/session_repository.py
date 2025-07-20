@@ -1,16 +1,25 @@
-from vault.repositories.base_repository import BaseRepository
-from typing import Dict, Optional, Any, List
+from typing import Optional
 from pathlib import Path
-from config import Config
+from vault.config import Config
 from vault.utils.helpers import generate_session_token
 import json
+import redis
 from datetime import datetime, timedelta
 
-class SessionRepository(BaseRepository):
+class SessionRepository:
     """Repository for session operations using Redis"""
     
-    def __init__(self, redis_client=None):
-        self.redis_client = redis_client
+    def __init__(self):
+        try:
+            self.redis_client = redis.Redis(
+                host=Config.REDIS_HOST,
+                port=Config.REDIS_PORT,
+                db=Config.REDIS_DB,
+                decode_responses=True
+            )
+            self.redis_client.ping()
+        except redis.ConnectionError:
+            self.redis_client = None
         self.session_file = Path(Config.STORAGE_DIR) / ".vault_session"
     
     def create_session(self, user_id: str) -> str:
@@ -52,6 +61,7 @@ class SessionRepository(BaseRepository):
                             return session_data["user_id"]
                         else:
                             self.session_file.unlink()
+                            print("Session expired, Login again")
                 except (json.JSONDecodeError, KeyError):
                     pass
             return None
