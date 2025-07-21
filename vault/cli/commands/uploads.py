@@ -10,7 +10,6 @@ class UploadCommand(Command):
             print("Error: upload command requires a file path")
             return
         
-
         try:
             user = self.require_auth()
             filepath = args[0]
@@ -19,11 +18,13 @@ class UploadCommand(Command):
             if len(args) > 1:
                 folder_name = args[1]
 
-                files = self.file_service.list_files(user["id"], None)
+                # Fix: Use show_public=False to get user's own files including private folders
+                files = self.file_service.list_files(user["id"], None, show_public=False)
                 folder = next((f for f in files if f["filename"] == folder_name and f["type"] == FileType.FOLDER.value), None)
 
                 if folder:
                     parent_id = folder["file_id"]
+                    print(f"Using existing folder: {folder_name}")
                 else:
                     result = self.file_service.create_folder(user["id"], folder_name)
                     parent_id = result["folder_id"]
@@ -33,7 +34,7 @@ class UploadCommand(Command):
             print(f"File uploaded successfully! ID: {result['file_id']}")
 
             if result["type"] == FileType.IMAGE.value:
-                print("Thumbnail generation Scheduled...")
+                print("Thumbnail generation scheduled...")
 
         except SystemExit:
             pass
@@ -45,5 +46,4 @@ class UploadCommand(Command):
             print(f"Error uploading file: {e}")
 
     def get_help(self) -> str:
-        return "upload <filepath> - Upload a file to the vault"
-    
+        return "upload <filepath> [folder_name] - Upload a file to the vault, optionally to a specific folder"    

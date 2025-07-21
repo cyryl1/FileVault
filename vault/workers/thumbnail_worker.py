@@ -2,14 +2,16 @@ from celery import Celery
 from vault.config import Config
 from PIL import Image
 from pathlib import Path
+import logging
 
-celery_app = Celery(
-    'filevault',
-    broker=Config.CELERY_BROKER_URL,
-    backend=Config.CELERY_RESULT_BACKEND
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-celery_app.conf.update(
+# Create Celery app with proper configuration
+app = Celery('vault')
+app.conf.update(
+    broker_url=Config.CELERY_BROKER_URL,
+    result_backend=Config.CELERY_RESULT_BACKEND,
     task_serializer='json',
     accept_content=['json'],
     result_serializer='json',
@@ -17,22 +19,29 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-@celery_app.task
+@app.task
 def generate_thumbnail(file_id: str, file_path: str):
-    """Generate thumbnail for an image file"""
+    """Generate a thumbnail for an image file"""
     try:
-        with Image.open(file_path) as img:
-            img.thumbnail((100, 100), Image.Resampling.LANCZOS)
+        logger.info(f"Generating thumbnail for file_id: {file_id}, path: {file_path}")
+        source_path = Path(file_path)
+        if not source_path.exists():
+            logger.error(f"File not found: {file_path}")
+            raise FileNotFoundError(f"File not found: {file_path}")
 
-            thumbnail_path = Path(Config.THUMBNAILS_DIR) / f"{file_id}.jpg"
-            thumbnail_path.parent.mkdir(exist_ok=True)
+        thumbnail_dir = Path(Config.THUMBNAILS_DIR)
+        thumbnail_dir.mkdir(exist_ok=True)
+        thumbnail_path = thumbnail_dir / f"{file_id}.jpg"
 
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-
-            img.save(thumbnail_path, "JPEG", quality=85)
-            return f"Thumbnail generated for {file_id}"
+        with Image.open(source_path) as img:
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.thumbnail((128, 128))
+            img.save(thumbnail_path, 'JPEG', quality=90)
+            
+        logger.info(f"Thumbnail generated: {thumbnail_path}")
+        return str(thumbnail_path)
+        
     except Exception as e:
-        return f"Error generating thumbnail for {file_id}: {str(e)}"
-
-
+        logger.error(f"Failed to generate thumbnail for {file_id}: {str(e)}")
+        raise

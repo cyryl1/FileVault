@@ -1,5 +1,3 @@
-import json
-import uuid
 from datetime import datetime
 import shutil
 from pathlib import Path
@@ -22,11 +20,40 @@ class FileService:
         self.uploads_dir.mkdir(exist_ok=True)
         self.thumbnails_dir.mkdir(exist_ok=True)
 
+    # def create_folder(self, user_id: str, folder_name: str, parent_id: Optional[str] = None) -> Dict[str, Any]:
+    #     """Create a new folder"""
+    #     existing = self.file_repo.find_by_name_and_parent(folder_name, parent_id, user_id)
+    #     if existing:
+    #         raise ValueError(f"Folder '{folder_name}' already exists in this location")
+
+    #     if parent_id:
+    #         parent = self.file_repo.find_by_user_and_id(parent_id, user_id)
+    #         if not parent:
+    #             raise ValueError(f"Parent folder not found: {parent_id}")
+    #         if parent["type"] != FileType.FOLDER.value:
+    #             raise ValueError("Parent must be a folder")
+
+    #     folder_id = generate_file_id()
+    #     folder_data = {
+    #         "id": folder_id,
+    #         "user_id": user_id,
+    #         "name": folder_name,
+    #         "type": FileType.FOLDER.value,
+    #         "parent_id": parent_id,
+    #         "size": 0,
+    #         "visibility": Visibility.PRIVATE.value,
+    #         "path": "",
+    #         "created_at": datetime.now().isoformat()
+    #     }
+
+    #     self.file_repo.create(folder_data)
+    #     return {"folder_id": folder_id, "name": folder_name}
+
     def create_folder(self, user_id: str, folder_name: str, parent_id: Optional[str] = None) -> Dict[str, Any]:
         """Create a new folder"""
         existing = self.file_repo.find_by_name_and_parent(folder_name, parent_id, user_id)
         if existing:
-            raise ValueError(f"Folder '{folder_name} already exists in this location")
+            raise ValueError(f"Folder '{folder_name}' already exists in this location")  # Fixed: added closing quote
 
         if parent_id:
             parent = self.file_repo.find_by_user_and_id(parent_id, user_id)
@@ -50,7 +77,6 @@ class FileService:
 
         self.file_repo.create(folder_data)
         return {"folder_id": folder_id, "name": folder_name}
-
 
     def upload_file(self, user_id: str, filepath: str, parent_id: Optional[str] = None) -> Dict[str, Any]:
         """Upload a file and return metadata"""
@@ -91,7 +117,14 @@ class FileService:
 
         self.file_repo.create(file_data)
         if file_type == FileType.IMAGE:
-            generate_thumbnail.delay(file_id, str(dest_path))
+            try:
+                success = generate_thumbnail(file_id, str(dest_path))
+                if success:
+                    print("Thumbnail generated successfully")
+                else:
+                    print("Failed to generate thumbnail")
+            except Exception as e:
+                print(f"Thumbnail generation error: {e}")
         return {
             "file_id": file_id,
             "filename": source_path.name,
