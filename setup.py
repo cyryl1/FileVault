@@ -9,7 +9,7 @@ class InstallCommand(install):
 
 setup(
     name="filevault-cli",
-    version="3.0.0",
+    version="4.0.0",
     description="A command-line file management system",
     author="Aribisala Praise",
     author_email="aribisalapraise@gmail.com",
@@ -19,11 +19,18 @@ setup(
         'bcrypt>=4.0',
         'redis>=4.0',
         'celery>=5.0',
-        'Pillow>=9.0'
+        'Pillow>=9.0',
+        'click',
+        'fastapi',
+        'uvicorn',
+        'python-multipart',
+        'passlib[bcrypt]',
+        'python-jose[cryptography]',
     ],
     entry_points={
         'console_scripts': [
-            'vault=vault:main',
+            # 'vault=vault:main',
+            'backend=vault.api:server'
         ],
     },
     python_requires='>=3.6',

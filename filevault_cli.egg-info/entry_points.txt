@@ -1,2 +1,2 @@
 [console_scripts]
-vault = vault:main
+backend = vault.api:server

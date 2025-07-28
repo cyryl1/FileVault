@@ -3,3 +3,9 @@ bcrypt>=4.0
 redis>=4.0
 celery>=5.0
 Pillow>=9.0
+click
+fastapi
+uvicorn
+python-multipart
+passlib[bcrypt]
+python-jose[cryptography]
